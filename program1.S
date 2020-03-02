@@ -23,19 +23,29 @@ main:
 		mul r9, r1, #8 
 		add r12, r10, r9 /* r12 stores the address of the next char*/
 		ldr r12, [r12, #0]
-		cbz r12, valid	/* if the char is 0, it is finished, jump to valid */
+		cbz r12, valid1	/* if the char is 0, it is finished, jump to valid */
 		addi r1, #1
 		sub r2, r1, #11
 		cbz r2, invalid_str1
 		b loop_str1
 	/* at the end of this loop, r1 stores the length of string1 */
 
-	valid: /* continue and check if string2 is valid*/
-
-
+	valid1: /* continue and check if string2 is valid*/
+		mov r2, #0
+		loop_str2:
+			mul r9, r2, #8
+			add r12, r11, r9
+			ldr r12, [r12, #0]
+			cbz r12, valid2
+			addi r2, #1
+			sub r2, r1, #11
+			cbz r2, invalid_str2
+			b loop_str2
 	invalid_str1:
 		mov r0, #21
 		bx lr
+	invalid_str2:
+		mov r0, #22
+		bx lr	
 
-	/* get the length of strings */
-	
+/* now copy these strings byte by byte to a new array to concatenate */
