@@ -102,6 +102,7 @@ invalid_str1: 			// if string1 is invalid, exit
 
 invalid_str2: 			// if string2 is invalid, exit
 	ldr r0, address_of_error
+	bl printf
 	mov r0, #22
 
 	ldr lr, address_of_return
@@ -129,14 +130,16 @@ continue:
 
 concatenate2:
 	ldrb r2, [r3, r9]
-	strb r2, [r1, r9]
-	cmp r7, r9
+	strb r2, [r1, r0]
+	add r0, r0, #1
+	cmp r9, r7
 	beq end
 	add r9, r9, #1
+	b concatenate2
 
 end:
 	ldr r0, address_of_printf_msg
-	ldr r1, address_of_return
+	ldr r1, address_of_result
 	bl printf
 
 	add r0, r6, r7
