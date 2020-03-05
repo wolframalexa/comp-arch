@@ -5,25 +5,29 @@
 .data
 
 .balign 4
-scanf_msg1: .asciz "Enter the first string: "
+msg1: .asciz "Enter the first string: "
 
 .balign 4
-scanf_msg2: .asciz "Enter the second string: "
+msg2: .asciz "Enter the second string: "
 
 .balign 4
-scan_pattern: .asciz "%s"
+scan_pattern: .asciz "%c"
 
 .balign 4
 printf_msg: .asciz "Here is your concatenated string: %s\n"
 
 .balign 4
-string1: .word 10  /* every string is actually an array of chars, which are 1 byte */
+error: .asciz "An error has occurred.\n"
 
 .balign 4
-string2: .word 10 /* I assume "10 characters" includes null-termination */
+string1: .skip 11  /* every string is actually an array of chars, which are 1 byte */
 
 .balign 4
-return: .word 0
+string2: .skip 11 /* I assume "10 characters" includes null-termination */
+
+.balign 4
+return: .skip 24
+
 
 .text
 .global main
@@ -40,16 +44,33 @@ main:
 	ldr r1, address_of_string1
 	bl scanf
 
-	ldr r0, address_of_printf_msg
+	mov r5, #0 /* iterator for 1st str */
+	mov r6, #0 /* iterator for 2nd str */
+
+load1:
+	cmp r5, #11
+	beq invalid_str1
+
+	ldr r0, address_of_scan_pattern
 	ldr r1, address_of_string1
-	ldr r1, [r1]
+	add r1, r1, r5
+	bl scanf
+
+	ldr r1, address_of_string1
+	add r1, r1, r6
+	ldrb r1, [r1]
+	cmp r1, r5
+	beq valid1
+
+	add r6, r6, #1
+	b load1
+
+msg2:
+	ldr r0, address_of_scanf_msg2
 	bl printf
 
-	ldr r0, address_of_string1
-	ldr r0, [r0]
+	add 
 
-	ldr lr, address_of_return
-	ldr lr, [lr]
 	bx lr
 
 address_of_printf_msg: .word printf_msg
