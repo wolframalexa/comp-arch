@@ -71,27 +71,6 @@ msg2:
 
 	add 
 
-	bx lr
-
-address_of_printf_msg: .word printf_msg
-address_of_scanf_msg1: .word scanf_msg1
-address_of_scanf_msg2: .word scanf_msg2
-address_of_scan_pattern: .word scan_pattern
-address_of_string1: .word string1
-address_of_string2: .word string2
-address_of_return: .word return
-
-/* External */
-.global printf
-.global scanf
-
-
-
-
-
-
-
-/*	
 /* check if the strings exceed 10 characters: 0 must occur in the first 11 characters */
 	
 	mov r1, #0 /* stores position in array */	
@@ -125,14 +104,31 @@ address_of_return: .word return
 			subs r2, r1, #11
 			bne loop_str2 /* if at end and haven't found 0, invalid */
 			b invalid_str2
-	invalid_str1:
-		mov r0, #21
-		bx lr
+invalid_str1:
+	mov r0, #21
+	bx lr
 
-	invalid_str2:
-		mov r0, #22
-		bx lr
-	valid2:
+invalid_str2:
+	mov r0, #22
+	bx lr
+
+valid2:
 /*now copy these strings byte by byte to a new array to concatenate */
-		mov r0, #0
-		bx lr
+	mov r0, #0
+	bx lr
+
+
+	bx lr
+
+// addresses of variables
+address_of_printf_msg: .word printf_msg
+address_of_scanf_msg1: .word scanf_msg1
+address_of_scanf_msg2: .word scanf_msg2
+address_of_scan_pattern: .word scan_pattern
+address_of_string1: .word string1
+address_of_string2: .word string2
+address_of_return: .word return
+
+/* External */
+.global printf
+.global scanf
