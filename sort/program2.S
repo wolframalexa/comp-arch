@@ -73,10 +73,9 @@ main:
 	str r0, [r7]			// r7 stores ptr to file
 	ldr r10, address_numbersin	// store address of numbers array
 
-/* check if the file exists
 check_file_exists:
 	cmp r0, r5
-	beq print_error_dne */
+	beq print_error_dne
 
 	mov r6, #0			// iterator
 
@@ -94,7 +93,42 @@ read_file:
 	bl feof				// read end-of-file indicator to r0
 
 	cmp r0, #0			// check if end of file
-	bneq read_file
+	bne read_file
+
+next:
+	sub r6, r6, #4			// account for looking for end of file
+	mov r8, #0			// iterator for numbersin
+	mov r9, #0			// iterator for numbersout
+	ldr r2, address_numbersout
+
+	ldr r3, [r10, r8]		// first number of numbersin, r3 stores "minimum"
+
+find_min:
+	add r8, r8, #1
+	ldr r4, [r10, r8]
+
+	cmp r4, #0			// if r4 is after the last value of the array, sort
+	beq sort
+
+	cmp r3, r4
+	bge new_min			// if r3 > r4, r4 is the new min
+
+	bl find_min
+
+new_min:
+	mov r3, r4
+	bl find_min
+
+sort:
+
+
+
+
+
+
+
+
+
 
 print_error_dne:
 	ldr r0, address_error_dne
