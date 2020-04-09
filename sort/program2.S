@@ -16,7 +16,7 @@ msg2: .asciz "Enter the name of the output file: \n"
 scan_pattern_number: .asciz "%d"
 
 .balign 4
-scan_pattern_string: .asciz "%s"
+output_pattern: .asciz "%d\n"
 
 .balign 4
 read: .asciz "r"
@@ -54,41 +54,36 @@ return: .word 0
 
 // load numbers from file into array
 main:
-	ldr r1, address_return
-	str lr, [r1]
+	push {r7, lr}
+	subs sp, sp, #4			// free up space on stack
 
 	ldr r5, address_new_line	// compare to r5 to find null characters
 	ldrb r5, [r5]
 
-/*	ldr r0, address_msg1		// prompt user for filename 1
-	bl printf
-*/
 	ldr r0, address_inputfile
 	ldr r1, address_read
 	bl fopen			// r0 is the address of the filename
 
+	str r0, [sp]			// putting location of file on the stack
+
+check_file_exists:
 	cmp r0, #0			// if file is not present, throw error
 	beq print_error_dne
 
-	str r0, [r7]			// r7 stores ptr to file
 	ldr r10, address_numbersin	// store address of numbers array
 
-check_file_exists:
-	cmp r0, r5
-	beq print_error_dne
-
-	mov r6, #0			// iterator
+	mov r6, #0			// iterator for upcoming loop
 
 read_file:
 	cmp r6, #400
 	beq print_error_length
 
-	ldr r0, [r7]			// load address of file
+	ldr r0, [sp]			// load address of file
 	ldr r1, address_scan_pattern_number
 	add r2, r10, r6			// scan to the location in array
 	bl fscanf
 
-	ldr r0, [r7]			// address of file
+	ldr r0, [sp]			// address of file
 	add r6, r6, #4
 	bl feof				// read end-of-file indicator to r0
 
@@ -101,56 +96,74 @@ next:
 	mov r9, #0			// iterator for numbersout
 	ldr r2, address_numbersout
 
+set_up_min:
 	ldr r3, [r10, r8]		// first number of numbersin, r3 stores "minimum"
+	mov r5, #0			// r6 will tell us whether there have been swaps or not
 
 find_min:
 	add r8, r8, #1
-	ldr r4, [r10, r8]
+	ldr r4, [r10, r8]		// load consecutive value into r4
 
 	cmp r4, #0			// if r4 is after the last value of the array, sort
-	beq sort
+	beq move_numbersout
 
 	cmp r3, r4
-	bge new_min			// if r3 > r4, r4 is the new min
+	bgt new_min			// if r3 > r4, r4 is the new min. note that if they are equal they are not swapped
 
-	bl find_min
+	cmp r5, #0
+	beq sorted			// if no swaps have been made, the numbers are sorted
+	bl set_up_min
 
 new_min:
 	mov r3, r4
+	mov r5, #1
 	bl find_min
 
-sort:
+move_numbersout:
+	str r3, [r2, r9]		// stores minimum value at position r9 in new array
+	add r9, r9, #1
 
+	mov r11, #4294967295		// max value with 32 bits
+	str r11, [r10, r8]		// replace position of min with max value
+	mov r8, #0
+	bl set_up_min
 
+sorted:
+	mov r5, #0
+	ldr r0, address_outputfile
+	ldr r1, address_write
+	bl fopen
+	str r0, [r7]
+	ldr r6, address_numbersout
 
+write_output:
+	ldr r0, [r7]
+	ldr r1, address_output_pattern
+	add r2, r6, r5
+	ldr r2, [r2]
+	bl fprintf
 
+	add r5, r5, #4
+	cmp r5, r4				// if more elements left to print, do it again
+	bne write_output
 
-
-
-
-
+exit:
+	adds sp, sp, #4
+	pop {r7, lr}
+	bx lr
 
 print_error_dne:
 	ldr r0, address_error_dne
 	bl printf
-	mov r0, #0
-
-	ldr lr, address_return
-	ldr lr, [lr]
-	bx lr
+	mov r0, #1
+	bl exit
 
 print_error_length:
 	ldr r0, address_error_length
 	bl printf
-	mov r0, #0
+	mov r0, #2
 
-	ldr lr, address_return
-	ldr lr, [lr]
-	bx lr
-
-// sort array
-
-// load numbers from array into output file
+	bl exit
 
 address_msg1:			.word msg1
 address_msg2:			.word msg2
@@ -165,7 +178,7 @@ address_numbersout:		.word numbersout
 address_return: 		.word return
 address_read:			.word read
 address_write:			.word write
-
+address_output_pattern:		.word output_pattern
 
 /* C-style functions */
 
