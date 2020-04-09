@@ -182,7 +182,8 @@ address_output_pattern:		.word output_pattern
 
 /* C-style functions */
 
-.global printf
+.global fprintf
 .global fscanf
 .global fopen
 .global fclose
+.global feof
