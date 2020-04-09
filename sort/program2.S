@@ -67,7 +67,10 @@ main:
 	ldr r1, address_read
 	bl fopen			// r0 is the address of the filename
 
-// ISSUE HERE	str r0, r7			// r7 stores ptr to file
+	cmp r0, #0			// if file is not present, throw error
+	beq print_error_dne
+
+	str r0, [r7]			// r7 stores ptr to file
 	ldr r10, address_numbersin	// store address of numbers array
 
 /* check if the file exists
@@ -78,19 +81,21 @@ check_file_exists:
 	mov r6, #0			// iterator
 
 read_file:
-	cmp r6, #100
+	cmp r6, #400
 	beq print_error_length
 
-	ldr r0, address_scan_pattern_number
-	ldr r1, address_numbersin
-	add r1, r1, r6
-	bl scanf
+	ldr r0, [r7]			// load address of file
+	ldr r1, address_scan_pattern_number
+	add r2, r10, r6			// scan to the location in array
+	bl fscanf
 
-	ldr r1, address_numbersin
-	add r1, r1, r6
-	ldr r1, [r1]
-	cmp r1, r5			// if we've reached \n, end of int
-/*
+	ldr r0, [r7]			// address of file
+	add r6, r6, #4
+	bl feof				// read end-of-file indicator to r0
+
+	cmp r0, #0			// check if end of file
+	bneq read_file
+
 print_error_dne:
 	ldr r0, address_error_dne
 	bl printf
@@ -99,7 +104,7 @@ print_error_dne:
 	ldr lr, address_return
 	ldr lr, [lr]
 	bx lr
-*/
+
 print_error_length:
 	ldr r0, address_error_length
 	bl printf
