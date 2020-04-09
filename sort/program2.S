@@ -1,6 +1,6 @@
 /* Alexa Jakob Program 2 ECE251, Spring 2020 */
 
-/* This program takes a program of max 100 lines of 32 bit integers and sorts them
+/* This program takes "input.txt"  max 100 lines of 32 bit integers and sorts them, outputting them to "output.txt"
  Assumption that all lines in the file will contain ints, not some other datatype
 */
 
@@ -34,7 +34,10 @@ error_dne: .asciz "ERROR: the file does not exist\n"
 error_length: .asciz "ERROR: the file is too long\n"
 
 .balign 4
-filename: .skip 4 // assume a pointer is 4 bytes
+inputfile: .asciz "input.txt"
+
+.balign 4
+outputfile: .asciz "output.txt"
 
 .balign 4
 numbersin: .skip 400 // 32 bit ints = 4 bytes, * up to 100 ints
@@ -57,20 +60,20 @@ main:
 	ldr r5, address_new_line	// compare to r5 to find null characters
 	ldrb r5, [r5]
 
-	ldr r0, address_msg1		// prompt user for filename 1
+/*	ldr r0, address_msg1		// prompt user for filename 1
 	bl printf
-
-	ldr r0, address_scan_pattern_string
-	ldr r1, address_filename
-	bl scanf			// r0 is the address of the filename
-
+*/
+	ldr r0, address_inputfile
 	ldr r1, address_read
-	bl fopen
+	bl fopen			// r0 is the address of the filename
 
-// check if the file exists
+// ISSUE HERE	str r0, r7			// r7 stores ptr to file
+	ldr r10, address_numbersin	// store address of numbers array
+
+/* check if the file exists
 check_file_exists:
 	cmp r0, r5
-	beq print_error_dne
+	beq print_error_dne */
 
 	mov r6, #0			// iterator
 
@@ -87,7 +90,7 @@ read_file:
 	add r1, r1, r6
 	ldr r1, [r1]
 	cmp r1, r5			// if we've reached \n, end of int
-
+/*
 print_error_dne:
 	ldr r0, address_error_dne
 	bl printf
@@ -96,7 +99,7 @@ print_error_dne:
 	ldr lr, address_return
 	ldr lr, [lr]
 	bx lr
-
+*/
 print_error_length:
 	ldr r0, address_error_length
 	bl printf
@@ -113,11 +116,11 @@ print_error_length:
 address_msg1:			.word msg1
 address_msg2:			.word msg2
 address_scan_pattern_number:	.word scan_pattern_number
-address_scan_pattern_string:	.word scan_pattern_string
+address_inputfile:		.word inputfile
 address_new_line:		.word new_line
 address_error_dne:		.word error_dne
 address_error_length:		.word error_length
-address_filename:		.word filename
+address_outputfile:		.word outputfile
 address_numbersin:		.word numbersin
 address_numbersout:		.word numbersout
 address_return: 		.word return
@@ -128,6 +131,6 @@ address_write:			.word write
 /* C-style functions */
 
 .global printf
-.global scanf
+.global fscanf
 .global fopen
 .global fclose
