@@ -7,12 +7,6 @@
 .data
 
 .balign 4
-msg1: .asciz "Enter the name of the input file: \n"
-
-.balign 4
-msg2: .asciz "Enter the name of the output file: \n"
-
-.balign 4
 scan_pattern_number: .asciz "%d"
 
 .balign 4
@@ -165,8 +159,6 @@ print_error_length:
 
 	bl exit
 
-address_msg1:			.word msg1
-address_msg2:			.word msg2
 address_scan_pattern_number:	.word scan_pattern_number
 address_inputfile:		.word inputfile
 address_new_line:		.word new_line
