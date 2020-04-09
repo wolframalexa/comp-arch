@@ -91,7 +91,7 @@ read_file:
 	bne read_file
 
 next:
-	sub r6, r6, #4			// account for looking for end of file
+	sub r6, r6, #4			// account for looking for end of file. r6 stores size of array.
 	mov r8, #0			// iterator for numbersin
 	mov r9, #0			// iterator for numbersout
 	ldr r2, address_numbersout
@@ -101,10 +101,10 @@ set_up_min:
 	mov r5, #0			// r6 will tell us whether there have been swaps or not
 
 find_min:
-	add r8, r8, #1
+	add r8, r8, #4
 	ldr r4, [r10, r8]		// load consecutive value into r4
 
-	cmp r4, #0			// if r4 is after the last value of the array, sort
+	cmp r8, r6			// if r8 is larger than the size of the array, move min to numbersout
 	beq move_numbersout
 
 	cmp r3, r4
