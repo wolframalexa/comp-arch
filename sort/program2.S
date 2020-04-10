@@ -117,7 +117,7 @@ move_numbersout:
 	str r3, [r2, r9]		// stores minimum value at position r9 in new array
 	add r9, r9, #1
 
-	mov r11, #4294967295		// max value with 32 bits
+	mov r11, #2147483647		// max value with 32 bits
 	str r11, [r10, r8]		// replace position of min with max value
 	mov r8, #0
 	bl set_up_min
