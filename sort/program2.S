@@ -75,6 +75,7 @@ read_file:
 	ldr r0, [sp]			// load address of file
 	ldr r1, address_scan_pattern_number
 	add r2, r10, r6			// scan to the location in array
+//	ldr r2, [r10, r6]
 	bl fscanf
 
 	ldr r0, [sp]			// address of file
@@ -127,19 +128,24 @@ sorted:
 	ldr r0, address_outputfile
 	ldr r1, address_write
 	bl fopen
-	str r0, [r7]
-	ldr r6, address_numbersout
+	str r0, [sp]
+	ldr r10, address_numbersout
 
 write_output:
-	ldr r0, [r7]
+	ldr r0, [sp]
 	ldr r1, address_output_pattern
 	add r2, r6, r5
+
+	cmp r2, #0
+	beq exit
+//	ldr r2, [r10, r5]
 	ldr r2, [r2]
 	bl fprintf
 
 	add r5, r5, #4
-	cmp r5, r4				// if more elements left to print, do it again
-	bne write_output
+	cmp r5, r6				// if more elements left to print, do it again
+	beq exit
+//	bne write_output
 
 exit:
 	adds sp, sp, #4
