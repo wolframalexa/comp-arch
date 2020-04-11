@@ -78,6 +78,8 @@ read_file:
 //	ldr r2, [r10, r6]
 	bl fscanf
 
+// ISSUE IS WITH USING FSCANF AND FEOF I THINK
+
 	ldr r0, [sp]			// address of file
 	add r6, r6, #4
 	bl feof				// read end-of-file indicator to r0
