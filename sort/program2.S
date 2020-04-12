@@ -79,6 +79,7 @@ next:
 	sub r6, r6, #4			// account for looking for end of file. r6 stores size of array.
 	mov r8, #0			// iterator for numbersin
 	mov r9, #0			// iterator for numbersout
+	mov r12, #0			// r7 will store position of minimum
 	ldr r2, address_numbersout
 
 set_up_min:
@@ -95,26 +96,34 @@ find_min:
 	cmp r3, r4
 	bgt new_min			// if r3 > r4, r4 is the new min. note that if they are equal they are not swapped
 
-	cmp r5, #0
-	beq sorted			// if no swaps have been made, the numbers are sorted
-	bl set_up_min
+//	cmp r5, #0
+//	beq sorted			// if no swaps have been made, the numbers are sorted
+//	bl set_up_min
 
-new_min:
-	mov r3, r4
-	mov r5, #1
-	bl find_min
+
+//new_min:
+//	mov r3, r4
+//	mov r12, r8			// stores position of minimum
+//	mov r5, #1
+//	bl find_min
 
 move_numbersout:
 	cmp r9, r6
 	beq sorted
 
 	str r3, [r2, r9]		// stores minimum value at position r9 in new array
-	add r9, r9, #1
+	add r9, r9, #4
 
 	mov r11, #2147483647		// max value with 32 bits
-	str r11, [r10, r8]		// replace position of min with max value
+	str r11, [r10, r12]		// replace position of min with max value
 	mov r8, #0
 	bl set_up_min
+
+new_min:
+	mov r3, r4
+	mov r12, r8
+	mov r5, #1
+	bl find_min
 
 sorted:
 	mov r5, #0
