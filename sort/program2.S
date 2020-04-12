@@ -42,7 +42,7 @@ numbersout: .skip 400
 
 // load numbers from file into array
 main:
-	push {r7, lr}
+	push {r7, lr}			// save lr
 	subs sp, sp, #4			// free up space on stack
 
 	ldr r0, address_inputfile
@@ -55,13 +55,12 @@ check_file_exists:
 	cmp r0, #0			// if file is not present, throw error
 	beq print_error_dne
 
-	ldr r10, address_numbersin	// store address of numbers array
-
+	ldr r10, address_numbersin	// store address of numbersin array
 	mov r6, #0			// iterator for upcoming loop
 
 read_file:
 	cmp r6, #400
-	beq print_error_length
+	beq print_error_length		// if file is too long, throw error
 
 	ldr r0, [sp]			// load address of file
 	ldr r1, address_scan_pattern_number
@@ -79,31 +78,25 @@ next:
 	sub r6, r6, #4			// account for looking for end of file. r6 stores size of array.
 	mov r8, #0			// iterator for numbersin
 	mov r9, #0			// iterator for numbersout
-	mov r12, #0			// r7 will store position of minimum
 	ldr r2, address_numbersout
 
 set_up_min:
 	ldr r3, [r10, r8]		// first number of numbersin, r3 stores "minimum"
-	mov r5, #0			// r6 will tell us whether there have been swaps or not
-	mov r12, #0
+	mov r12, #0			// r12 will store position of minimum
 	
 find_min:
 	add r8, r8, #4
-	ldr r4, [r10, r8]		// load consecutive value into r4
+	ldr r4, [r10, r8]		// load next value into r4
 
-	cmp r8, r6			// if r8 is larger than the size of the array, move min to numbersout
+	cmp r8, r6			// if r8 is equal to size of the array, move min to numbersout
 	beq move_numbersout
 
 	cmp r3, r4
 	bgt new_min			// if r3 > r4, r4 is the new min. note that if they are equal they are not swapped
 	bl find_min
 
-//	cmp r5, #0
-//	beq sorted			// if no swaps have been made, the numbers are sorted
-//	bl set_up_min
-
 move_numbersout:
-	cmp r9, r6
+	cmp r9, r6			// if numbersout is the same length as numbersin, it's sorted
 	beq sorted
 
 	str r3, [r2, r9]		// stores minimum value at position r9 in new array
@@ -115,9 +108,8 @@ move_numbersout:
 	bl set_up_min
 
 new_min:
-	mov r3, r4
+	mov r3, r4			// r3 is the new minimum
 	mov r12, r8			// stores position of min
-	mov r5, #1
 	bl find_min
 
 sorted:
@@ -125,6 +117,7 @@ sorted:
 	ldr r0, address_outputfile
 	ldr r1, address_write
 	bl fopen			// open file in write mode
+
 	str r0, [sp]
 	ldr r10, address_numbersout
 
@@ -134,28 +127,28 @@ write_output:
 	add r2, r10, r5
 
 	ldr r2, [r2]
-	bl fprintf
+	bl fprintf				// print number to r5th line in file
 
 	add r5, r5, #4
 	cmp r5, r6				// if more elements left to print, do it again
 	bne write_output
 
 exit:
-	adds sp, sp, #4
-	pop {r7, lr}
+	mov r0, #0				// return code 0
+	adds sp, sp, #4				// restore stack ptr
+	pop {r7, lr}				// retrieve lr
 	bx lr
 
 print_error_dne:
 	ldr r0, address_error_dne
 	bl printf
-	mov r0, #1
+	mov r0, #1				// return code 1
 	bl exit
 
 print_error_length:
 	ldr r0, address_error_length
 	bl printf
-	mov r0, #2
-
+	mov r0, #2				// return code 2
 	bl exit
 
 address_scan_pattern_number:	.word scan_pattern_number
