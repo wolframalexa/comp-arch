@@ -51,9 +51,6 @@ main:
 	push {r7, lr}
 	subs sp, sp, #4			// free up space on stack
 
-	ldr r5, address_new_line	// compare to r5 to find null characters
-	ldrb r5, [r5]
-
 	ldr r0, address_inputfile
 	ldr r1, address_read
 	bl fopen			// r0 is the address of the filename
@@ -85,13 +82,14 @@ read_file:
 	bl feof				// read end-of-file indicator to r0
 
 	cmp r0, #0			// check if end of file
-	bne read_file
+	beq read_file
 
 next:
 	sub r6, r6, #4			// account for looking for end of file. r6 stores size of array.
 	mov r8, #0			// iterator for numbersin
 	mov r9, #0			// iterator for numbersout
 	ldr r2, address_numbersout
+	ldr r2, [r2]
 
 set_up_min:
 	ldr r3, [r10, r8]		// first number of numbersin, r3 stores "minimum"
