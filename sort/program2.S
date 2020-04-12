@@ -19,9 +19,6 @@ read: .asciz "r"
 write: .asciz "w"
 
 .balign 4
-new_line: .asciz "\n" // unix-style line endings
-
-.balign 4
 error_dne: .asciz "ERROR: the file does not exist\n"
 
 .balign 4
@@ -38,9 +35,6 @@ numbersin: .skip 400 // 32 bit ints = 4 bytes, * up to 100 ints
 
 .balign 4
 numbersout: .skip 400
-
-.balign 4
-return: .word 0
 
 .text
 
@@ -72,10 +66,7 @@ read_file:
 	ldr r0, [sp]			// load address of file
 	ldr r1, address_scan_pattern_number
 	add r2, r10, r6			// scan to the location in array
-//	ldr r2, [r10, r6]
 	bl fscanf
-
-// ISSUE IS WITH USING FSCANF AND FEOF I THINK
 
 	ldr r0, [sp]			// address of file
 	add r6, r6, #4
@@ -89,7 +80,6 @@ next:
 	mov r8, #0			// iterator for numbersin
 	mov r9, #0			// iterator for numbersout
 	ldr r2, address_numbersout
-	ldr r2, [r2]
 
 set_up_min:
 	ldr r3, [r10, r8]		// first number of numbersin, r3 stores "minimum"
@@ -115,6 +105,9 @@ new_min:
 	bl find_min
 
 move_numbersout:
+	cmp r9, r6
+	beq sorted
+
 	str r3, [r2, r9]		// stores minimum value at position r9 in new array
 	add r9, r9, #1
 
@@ -127,25 +120,21 @@ sorted:
 	mov r5, #0
 	ldr r0, address_outputfile
 	ldr r1, address_write
-	bl fopen
+	bl fopen			// open file in write mode
 	str r0, [sp]
 	ldr r10, address_numbersout
 
 write_output:
 	ldr r0, [sp]
 	ldr r1, address_output_pattern
-	add r2, r6, r5
+	add r2, r10, r5
 
-	cmp r2, #0
-	beq exit
-//	ldr r2, [r10, r5]
 	ldr r2, [r2]
 	bl fprintf
 
 	add r5, r5, #4
 	cmp r5, r6				// if more elements left to print, do it again
-	beq exit
-//	bne write_output
+	bne write_output
 
 exit:
 	adds sp, sp, #4
@@ -167,13 +156,11 @@ print_error_length:
 
 address_scan_pattern_number:	.word scan_pattern_number
 address_inputfile:		.word inputfile
-address_new_line:		.word new_line
 address_error_dne:		.word error_dne
 address_error_length:		.word error_length
 address_outputfile:		.word outputfile
 address_numbersin:		.word numbersin
 address_numbersout:		.word numbersout
-address_return: 		.word return
 address_read:			.word read
 address_write:			.word write
 address_output_pattern:		.word output_pattern
@@ -183,5 +170,4 @@ address_output_pattern:		.word output_pattern
 .global fprintf
 .global fscanf
 .global fopen
-.global fclose
 .global feof
