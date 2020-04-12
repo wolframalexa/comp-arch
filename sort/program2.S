@@ -85,7 +85,8 @@ next:
 set_up_min:
 	ldr r3, [r10, r8]		// first number of numbersin, r3 stores "minimum"
 	mov r5, #0			// r6 will tell us whether there have been swaps or not
-
+	mov r12, #0
+	
 find_min:
 	add r8, r8, #4
 	ldr r4, [r10, r8]		// load consecutive value into r4
@@ -95,17 +96,11 @@ find_min:
 
 	cmp r3, r4
 	bgt new_min			// if r3 > r4, r4 is the new min. note that if they are equal they are not swapped
+	bl find_min
 
 //	cmp r5, #0
 //	beq sorted			// if no swaps have been made, the numbers are sorted
 //	bl set_up_min
-
-
-//new_min:
-//	mov r3, r4
-//	mov r12, r8			// stores position of minimum
-//	mov r5, #1
-//	bl find_min
 
 move_numbersout:
 	cmp r9, r6
@@ -121,7 +116,7 @@ move_numbersout:
 
 new_min:
 	mov r3, r4
-	mov r12, r8
+	mov r12, r8			// stores position of min
 	mov r5, #1
 	bl find_min
 
