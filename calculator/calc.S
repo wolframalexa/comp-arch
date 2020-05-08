@@ -28,7 +28,23 @@ input: .skip 40
 // load numbers from command line using argv, r1. if too long, exit with error code
 
 main:
+        push {ip, lr}
+        mov r1, r0
+        ldr r0, =string
+        bl printf
+        pop {ip, pc}
+
+
 
 // transform expression into postfix notation: if find unfamiliar character, exit with error
 // evaluate postfix expression
 // exit and return r0
+
+
+address_scan_number: 	.word scan_number
+address_error_length: 	.word error_length
+address_error_char:	.word error_char
+address_input:		.word input
+
+// C-style functions
+.global printf
