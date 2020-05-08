@@ -16,9 +16,8 @@ error_char: .asciz "ERROR: you have used an unsupported character"
 .balign 4
 input: .skip 40
 
-.balign 4                                                                                                                                                                                                       .balign 4                                                                                                                                                                                                       .balign 4
-
-.balign 4
+string: .asciz "Argc: %d\n"
+string2: .asciz "Argv: %s\n"
 
 .text
 
@@ -29,10 +28,17 @@ input: .skip 40
 
 main:
         push {ip, lr}
+	mov r7, r1 		// ptr to input string
         mov r1, r0
         ldr r0, =string
-        bl printf
+        bl printf		// prin
+
+	ldr r1, [r7, #4]
+	ldr r0, =string2
+	bl printf
+
         pop {ip, pc}
+
 
 
 
