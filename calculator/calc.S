@@ -14,7 +14,7 @@ error_length: .asciz "ERROR: your operations are too long!"
 error_char: .asciz "ERROR: you have used an unsupported character"
 
 .balign 4
-input: .skip 9 // set of paragraphs = 1 operation, so max 1/calc
+input: .skip 40
 
 .balign 4                                                                                                                                                                                                       .balign 4                                                                                                                                                                                                       .balign 4
 
