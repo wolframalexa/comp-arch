@@ -34,6 +34,9 @@ operators: .asciz "t*/+-^()&"
 .balign 4
 space: .asciz " "
 
+.balign 4
+output: .asciz "%.3f\n"
+
 
 .text
 
@@ -244,8 +247,8 @@ clear_operation:
 	b postfix_loop
 
 operate:
-	pop {r2}		// second operand
-	pop {r3}		// first operand
+	pop {d2}		// second operand
+	pop {d3}		// first operand
 	mov r12, #1		// for exponents
 
 	cmp r1, #42		// if operation is *
@@ -272,30 +275,33 @@ multiply:
 	b postfix_loop
 
 subtract:
-	vsub.f32 r2, r3, r2
+	vsub.f64 x2, x3, x2
 	push {r2}
 	add r10, r10, #1
 	b postfix_loop
 
 add:
-	vadd.f32 r2, r3, r2
+	vadd.f32 w2, w3, w2
 	push {r2}
 	add r10, r10, #1
 	b postfix_loop
 
 divide:
-	vdiv.f32 r2, r3, r2
-	push {r2}
+	vdiv.f32 s2, s3, s2
+	push {s2}
 	add r10, r10, #1
 	b postfix_loop
 
 exponentiate:
-	vmul.f32 r12, r3, r12	// an exponent is multiplying something by itself
-	sub r2, r2, #1
+	vmul.f64 d12, d3, d12	// an exponent is multiplying something by itself
+	sub d2, d2, #1
+	cmp r2, #0
+	blt error_char
+
 	cmp r2, #0
 	bne exponentiate
 
-	push{r12}
+	push {r12}
 	add r10, r10, #1	
 	b postfix_loop	
 
@@ -303,7 +309,7 @@ exponentiate:
 
 exit:
 	pop {r0}
-	mov r2, r3, r0
+//	mov r2, r3
 	ldr r0, address_output
 	bl print
 	pop {r1}		// clear remaining &
@@ -341,8 +347,9 @@ address_precedence:	.word precedence
 address_separator:	.word separator
 address_temp:		.word temp
 address_space:		.word space
-
+address_output:		.word output
 
 // C-style functions
 .global printf
 .global scanf
+.global atof
