@@ -29,10 +29,11 @@ separator: .asciz "n"
 newline: .asciz "\0"
 
 .balign 4
-operators: .asciz "t*/+-()&"
+operators: .asciz "t*/+-^()&"
 
-string: .asciz "Argc: %d\n"
-string2: .asciz "Argv: %s\n"
+.balign 4
+space: .asciz " "
+
 
 .text
 
@@ -51,7 +52,7 @@ main:
 	mov r10, #0			// iterator for input array
 	mov r9, #0			// queue pointer
 	mov r8, #0 			// operator pointer
-	ldr r6, address_newline		// address of the input string
+	ldr r6, address_newline		// address of the newline character
 	ldrb r6, [r6]
 
 	ldr r5, address_operators
@@ -218,18 +219,110 @@ postfix_loop:
 	cmp r1, #47		// compare to / operator: highest ascii operator
 	ble operate
 
-next3:
+next3:				// sent here if we hit a .
+	ldr r2, address_temp
+	strb r1, [r2, r7]
+	add r7, r7, #1
+	add r10, r10, #1
+	b postfix_loop
 
-// TODO: execute operations in postfix
+push_float:
+	ldr r0, address_temp
+	bl atof			// turn string into float
+	push {r0}
+	mov r7, #0
+	add r10, r10, #1
+
+clear_operation:
+	ldr r0, address_temp
+	ldr r2, =space
+	ldrb r2, [r2]
+	strb r2, [r0, r7]	// clear the temporary array
+	add r7, r7, #1
+	cmp r7, #50
+	blt clear_operation
+	b postfix_loop
 
 operate:
-push_float:
+	pop {r2}		// second operand
+	pop {r3}		// first operand
+	mov r12, #1		// for exponents
+
+	cmp r1, #42		// if operation is *
+	beq multiply
+
+	cmp r1, #47		// if operation is /
+	beq divide
+
+	cmp r1, #43		// if operation is +
+	beq add
+
+	cmp r1, #45		// if operation is -
+	beq subtract
+
+	cmp r1, #94		// if operation is ^
+	beq exponentiate
+
+	b print_error_char
+
+multiply:
+	vmul.f32 r2, r3, r2
+	push {r2}
+	add r10, r10, #1
+	b postfix_loop
+
+subtract:
+	vsub.f32 r2, r3, r2
+	push {r2}
+	add r10, r10, #1
+	b postfix_loop
+
+add:
+	vadd.f32 r2, r3, r2
+	push {r2}
+	add r10, r10, #1
+	b postfix_loop
+
+divide:
+	vdiv.f32 r2, r3, r2
+	push {r2}
+	add r10, r10, #1
+	b postfix_loop
+
+exponentiate:
+	vmul.f32 r12, r3, r12	// an exponent is multiplying something by itself
+	sub r2, r2, #1
+	cmp r2, #0
+	bne exponentiate
+
+	push{r12}
+	add r10, r10, #1	
+	b postfix_loop	
 
 
 
+exit:
+	pop {r0}
+	mov r2, r3, r0
+	ldr r0, address_output
+	bl print
+	pop {r1}		// clear remaining &
+
+//	mov r0, #0		// REPLACE WITH RESULT
+//	adds sp, sp, #4
+	pop {r7, ip, pc}
+
+print_error_char:
+	ldr r0, address_error_char
+	bl printf
 	mov r0, #0
-        pop {ip, pc}
+	bl exit
 
+print_error_length:
+	ldr r0, address_error_length
+	bl printf
+	mov r0, #0
+	bl exit
 
 
 
@@ -246,6 +339,9 @@ address_operators:	.word operators
 address_queue: 		.word queue
 address_precedence:	.word precedence
 address_separator:	.word separator
+address_temp:		.word temp
+address_space:		.word space
+
 
 // C-style functions
 .global printf
