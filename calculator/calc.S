@@ -17,6 +17,9 @@ error_char: .asciz "ERROR: you have used an unsupported character"
 input: .skip 40
 
 .balign 4
+temp: .skip 50
+
+.balign 4
 queue: .skip 50
 
 .balign 4
@@ -247,8 +250,8 @@ clear_operation:
 	b postfix_loop
 
 operate:
-	pop {d2}		// second operand
-	pop {d3}		// first operand
+	pop {r2}		// second operand
+	pop {r3}		// first operand
 	mov r12, #1		// for exponents
 
 	cmp r1, #42		// if operation is *
@@ -269,38 +272,47 @@ operate:
 	b print_error_char
 
 multiply:
-	vmul.f32 r2, r3, r2
+//	vmov d2, r2
+//	vmov d3, r3
+	vmul.f64 d2, d3, d2
+//	vmov r2, d2
 	push {r2}
 	add r10, r10, #1
 	b postfix_loop
 
 subtract:
-	vsub.f64 x2, x3, x2
+	vsub.f64 d2, d3, d2
+//	vmov r2, d2
 	push {r2}
 	add r10, r10, #1
 	b postfix_loop
 
 add:
-	vadd.f32 w2, w3, w2
+	vadd.f64 d2, d3, d2
+//	vmov r2, d2
 	push {r2}
 	add r10, r10, #1
 	b postfix_loop
 
 divide:
-	vdiv.f32 s2, s3, s2
-	push {s2}
+	vdiv.f64 d2, d3, d2
+//	vmov r2, d2
+	push {r2}
 	add r10, r10, #1
 	b postfix_loop
 
 exponentiate:
+//	vmov d12, r2
+//	vmov d3, r3
 	vmul.f64 d12, d3, d12	// an exponent is multiplying something by itself
-	sub d2, d2, #1
+	sub r2, r2, #1
 	cmp r2, #0
 	blt error_char
 
 	cmp r2, #0
 	bne exponentiate
 
+//	vmov r12, d12
 	push {r12}
 	add r10, r10, #1	
 	b postfix_loop	
@@ -311,7 +323,7 @@ exit:
 	pop {r0}
 //	mov r2, r3
 	ldr r0, address_output
-	bl print
+	bl printf
 	pop {r1}		// clear remaining &
 
 //	mov r0, #0		// REPLACE WITH RESULT
