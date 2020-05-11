@@ -74,7 +74,7 @@ main:
 	mov r7, #0
 outer:
 	ldr r1, address_input
-//	ldr r1, [r1]
+	ldr r1, [r1]
 	ldrb r0, [r1, r10]		// load first element of input array
 	cmp r0, r6			// if end of array, branch to end
 	beq pop_stack
