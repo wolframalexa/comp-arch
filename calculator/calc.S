@@ -49,11 +49,11 @@ output: .asciz "%.3f\n"
 // load numbers from command line using argv, r1. if too long, exit with error code
 
 main:
-        push {ip, lr}			// save lr, ip
+        push {r7, ip, lr}		// save lr, ip
 	ldr r1, [r1, #4] 		// input string using argv
-	ldr r2, =input
+//	ldr r2, =input
+	ldr r2, address_input
 	str r1, [r2]
-
 
 	mov r10, #0			// iterator for input array
 	mov r9, #0			// queue pointer
@@ -73,8 +73,8 @@ main:
 	
 	mov r7, #0
 outer:
-	ldr r1, =input
-	ldr r1, [r1]
+	ldr r1, address_input
+//	ldr r1, [r1]
 	ldrb r0, [r1, r10]		// load first element of input array
 	cmp r0, r6			// if end of array, branch to end
 	beq pop_stack
@@ -118,8 +118,8 @@ close_parenthesis:			// pop operators from stack when reaching closed parenthesi
 	b close_parenthesis		// if you haven't hit the ( yet, continue popping
 
 continue:
-	ldr r1, =input
-	ldr r1, [r1]
+	ldr r1, address_input
+//	ldr r1, [r1]
 	ldrb r0, [r1, r10]
 	strb r0, [r4, r9]		// store operator in r9
 	mov r7, r10
