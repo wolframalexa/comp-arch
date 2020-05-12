@@ -11,10 +11,10 @@ scan_pattern: .asciz "%c"
 prompt: .asciz "Please enter the calculation: \n"
 
 .balign 4
-error_length: .asciz "ERROR: your operations are too long!"
+error_length: .asciz "ERROR: your operations are too long!\n"
 
 .balign 4
-error_char: .asciz "ERROR: you have used an unsupported character"
+error_char: .asciz "ERROR: you have used an unsupported character\n"
 
 .balign 4
 input: .skip 40
@@ -99,6 +99,8 @@ following:
 	ldrb r3, [r2, r1]		// r3 will be used to check for current element
 					// potential issue
 	mov r7, #0
+
+
 outer:
 	ldr r1, address_input
 //	ldr r1, [r1]
@@ -149,6 +151,8 @@ continue:
 	ldr r1, address_input
 //	ldr r1, [r1]
 	ldrb r0, [r1, r10]
+
+	ldr r4, address_queue
 	strb r0, [r4, r9]		// store operand in r4
 	mov r7, r10
 	add r7, r7, #4
@@ -161,13 +165,13 @@ continue:
 	b continue2
 
 yes_separator:
-	add r9, r9, #1
+	add r9, r9, #4
 	ldr r2, address_separator
 	ldrb r2, [r2]
 	strb r2, [r4, r9]
 
 no_separator:
-	add r9, r9, #1
+	add r9, r9, #4
 	add r10, r10, #1
 	mov r8, #0
 	b outer 			// start again to find new expression
@@ -208,7 +212,7 @@ next:
 
 next1:
 	strb r1, [r4, r9]
-	add r9, r9, #1
+	add r9, r9, #4
 	b cmp_current_stack
 
 next2:
@@ -229,7 +233,7 @@ pop_stack:
 	beq postfix
 
 	strb r1, [r4, r9]
-	add r9, r9, #1
+	add r9, r9, #4
 	b pop_stack		// continue popping from stack until we reach &
 
 	
@@ -283,8 +287,14 @@ operate:
 
 // TODO: get operands from r4, the queue
 
-	pop {r2}		// second operand
+//	pop {r2}		// second operand
 //	pop {r3}		// first operand
+
+	ldr r4, address_queue
+	ldr r2, [r4, r10]
+	add r10, r10, #4
+	ldr r3, [r4, r10]
+
 	mov r12, #1		// for exponents
 
 	cmp r1, #42		// if operation is *
@@ -310,28 +320,28 @@ multiply:
 	vmul.f64 d2, d3, d2
 //	vmov r2, d2
 	push {r2}
-	add r10, r10, #1
+	add r10, r10, #4
 	b postfix_loop
 
 subtract:
 	vsub.f64 d2, d3, d2
 //	vmov r2, d2
 	push {r2}
-	add r10, r10, #1
+	add r10, r10, #4
 	b postfix_loop
 
 add:
 	vadd.f64 d2, d3, d2
 //	vmov r2, d2
 	push {r2}
-	add r10, r10, #1
+	add r10, r10, #4
 	b postfix_loop
 
 divide:
 	vdiv.f64 d2, d3, d2
 //	vmov r2, d2
 	push {r2}
-	add r10, r10, #1
+	add r10, r10, #4
 	b postfix_loop
 
 exponentiate:
@@ -347,7 +357,7 @@ exponentiate:
 
 //	vmov r12, d12
 	push {r12}
-	add r10, r10, #1	
+	add r10, r10, #4	
 	b postfix_loop	
 
 
