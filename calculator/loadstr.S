@@ -26,7 +26,7 @@ temp: .skip 50
 queue: .skip 50
 
 .balign 4
-precedence: .asciz "011223456"
+precedence: .asciz "011223445" 		// likely issue with how we assign precedence
 
 .balign 4
 separator: .asciz "n"
@@ -43,6 +43,8 @@ space: .asciz " "
 .balign 4
 output: .asciz "%.3f\n"
 
+.balign 4
+result: .skip 4 
 
 .text
 
@@ -236,8 +238,8 @@ pop_stack:
 	beq postfix
 
 	ldr r4, address_temp
-	strb r1, [r4, r9]	// THIS IS THE ISSUE - was overwriting operands
-	add r9, r9, #4
+	strb r1, [r4, r8]	// THIS IS THE ISSUE - was overwriting operands
+	add r8, r8, #1
 	b pop_stack		// continue popping from stack until we reach &
 
 	
@@ -251,7 +253,7 @@ postfix:
 
 postfix_loop:
 	cmp r10, r9
-	beq end			// r9 stores size of queue (of operators)
+	beq end_program		// r9 stores size of queue (of operators)
 	
 	ldr r4, address_temp
 	ldrb r1, [r4, r10]	// access operator
@@ -373,10 +375,19 @@ exponentiate:
 
 
 
-exit:
-	pop {r0}
+end_program:
+	pop {r7}
+//	mov r2, r3, d0
+//	ldr r0, address_output
+//	bl printf
+
+
+	ldr r6, address_result
+	str r7, [r6, #0]
+
 //	mov r2, r3
 	ldr r0, address_output
+	ldr r1, address_result
 	bl printf
 	pop {r1}		// clear remaining &
 
@@ -388,19 +399,15 @@ print_error_char:
 	ldr r0, address_error_char
 	bl printf
 	mov r0, #0
-	bl exit
+	bl end_program
 
 print_error_length:
 	ldr r0, address_error_length
 	bl printf
 	mov r0, #0
-	bl exit
+	bl end_program
 
 
-
-// transform expression into postfix notation: if find unfamiliar character, exit with error
-// evaluate postfix expression
-// exit and return r0
 
 address_scan_pattern:	.word scan_pattern
 address_error_length: 	.word error_length
@@ -415,7 +422,7 @@ address_temp:		.word temp
 address_space:		.word space
 address_output:		.word output
 address_prompt:		.word prompt
-
+address_result:		.word result
 
 // C-style functions
 .global printf
