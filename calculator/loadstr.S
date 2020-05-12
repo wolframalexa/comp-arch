@@ -95,7 +95,7 @@ following:
 
 	ldr r4, address_queue
 	ldr r2, address_precedence
-	mov r1, #7
+	mov r1, #8
 	ldrb r3, [r2, r1]		// r3 will be used to check for current element
 					// potential issue
 	mov r7, #0
@@ -143,8 +143,10 @@ close_parenthesis:			// pop operators from stack when reaching closed parenthesi
 	pop {r1}
 	cmp r1, #40			// is r1 (
 	beq continue2			// if yes, continue
+
+
 	strb r1, [r4, r9]		// store operator in r4
-	add r9, r9, #1
+	add r9, r9, #4
 	b close_parenthesis		// if you haven't hit the ( yet, continue popping
 
 continue:
@@ -154,6 +156,8 @@ continue:
 
 	ldr r4, address_queue
 	strb r0, [r4, r9]		// store operand in r4
+	add r9, r9, #4			// potentially problematic
+
 	mov r7, r10
 	add r7, r7, #4
 	ldrb r0, [r1, r7]
@@ -172,7 +176,7 @@ yes_separator:
 
 no_separator:
 	add r9, r9, #4
-	add r10, r10, #1
+	add r10, r10, #4
 	mov r8, #0
 	b outer 			// start again to find new expression
 
@@ -180,7 +184,6 @@ continue2:
 	add r10, r10, #4
 	mov r8, #0
 	b outer				// loop over the expression again
-
 
 cmp_current_stack:			// if the current operator is of lower precedence
 	pop {r1}
@@ -204,7 +207,7 @@ continue4:
 next:
 	ldrb r2, [r5, r8]
 	push {r2}
-	add r10, r10, #1
+	add r10, r10, #4
 	ldr r2, address_precedence
 	ldrb r3, [r2, r8]
 	mov r8, #0
@@ -221,7 +224,7 @@ next2:
 	push {r1}
 	ldrb r2, [r5, r8]
 	push {r2}		// push current element onto stack
-	add r10, r10, #1
+	add r10, r10, #4
 	ldr r2, address_precedence
 	ldrb r3, [r2, r8]
 	mov r8, #0
@@ -232,7 +235,8 @@ pop_stack:
 	cmp r1, #38		// compare to &
 	beq postfix
 
-	strb r1, [r4, r9]
+	ldr r4, address_temp
+	strb r1, [r4, r9]	// THIS IS THE ISSUE - was overwriting operands
 	add r9, r9, #4
 	b pop_stack		// continue popping from stack until we reach &
 
@@ -249,7 +253,8 @@ postfix_loop:
 	cmp r10, r9
 	beq end			// r9 stores size of queue (of operators)
 	
-	ldrb r1, [r4, r10]	// access element from queue
+	ldr r4, address_temp
+	ldrb r1, [r4, r10]	// access operator
 	cmp r1, #110		// separator 'n'
 	beq push_float
 
@@ -259,11 +264,13 @@ postfix_loop:
 	cmp r1, #47		// compare to / operator: highest ascii operator
 	ble operate
 
+	// need comparison for exponent operator
+
 next3:				// sent here if we hit a .
 	ldr r2, address_temp
 	strb r1, [r2, r7]
 	add r7, r7, #1
-	add r10, r10, #1
+	add r10, r10, #4
 	b postfix_loop
 
 push_float:
@@ -271,7 +278,7 @@ push_float:
 	bl atof			// turn string into float
 	push {r0}
 	mov r7, #0
-	add r10, r10, #1
+	add r10, r10, #4
 
 clear_operation:
 	ldr r0, address_temp
@@ -289,6 +296,10 @@ operate:
 
 //	pop {r2}		// second operand
 //	pop {r3}		// first operand
+//	pop {r1}		// potentially problematic
+
+//	ldr r4, address_temp
+//	ldr r1, [r4, #4]	// NEED A BETTER WAY OF GETTING THE OPERATOR - WHY DID R1 NOT WORK ANYMORE
 
 	ldr r4, address_queue
 	ldr r2, [r4, r10]
