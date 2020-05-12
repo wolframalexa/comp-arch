@@ -8,7 +8,7 @@
 scan_pattern: .asciz "%c"
 
 .balign 4
-argv_warning: .asciz "WARNING: you have entered too many operations. Only the first one will be calculated."
+prompt: .asciz "Please enter the calculation: \n"
 
 .balign 4
 error_length: .asciz "ERROR: your operations are too long!"
@@ -32,7 +32,7 @@ precedence: .asciz "011223456"
 separator: .asciz "n"
 
 .balign 4
-newline: .asciz "\0"
+newline: .asciz "\n"
 
 .balign 4
 operators: .asciz "t*/+-^()&"
@@ -54,57 +54,64 @@ output: .asciz "%.3f\n"
 main:
         push {r7, ip, lr}		// save lr, ip
 	
-	cmp r0, #2
-	bgt print_warning
-	
-	ldr r1, [r1, #4] 		// input string using argv
+	ldr r5, address_newline
+	ldrb r5, [r5]
 
-//	ldr r2, =input
-	ldr r2, address_input
-	str r1, [r2]
+	ldr r0, address_prompt
+	bl printf
 
-	ldr r1, =input			// print argv
-	ldr r1, [r1]
-	ldrb r1, [r1, #0]
+	mov r6, #0
+
+load_str:
+	cmp r6, #40
+	beq print_error_length
+
 	ldr r0, address_scan_pattern
-	bl printf
+	ldr r1, address_input
+	add r1, r1, r6
+	bl scanf
 
-//	cmp r0, #2
-//	bgt print_warning
+	ldr r1, address_input
+	add r1, r1, r6
+	ldrb r1, [r1]
+	cmp r1, r5
+	beq following
 
-	ldr r0, address_input
-	bl printf
+	add r6, r6, #4
+	b load_str
 
-setup:
+
+following:
 	mov r10, #0			// iterator for input array
 	mov r9, #0			// queue pointer
 	mov r8, #0 			// operator pointer
-	ldr r6, address_newline		// address of the newline character
-	ldrb r6, [r6]
+//	ldr r6, address_newline		// address of the newline character
+//	ldrb r6, [r6]
 
 	ldr r5, address_operators
-	mov r1, #7
+	mov r1, #8
 	ldrb r3, [r5, r1]		// end of the operators
-	push {r3}
+	push {r3}			// push & onto stack
 
 	ldr r4, address_queue
 	ldr r2, address_precedence
 	mov r1, #7
 	ldrb r3, [r2, r1]		// r3 will be used to check for current element
-	
+					// potential issue
 	mov r7, #0
 outer:
 	ldr r1, address_input
-	ldr r1, [r1]
+//	ldr r1, [r1]
 	ldrb r0, [r1, r10]		// load first element of input array
-	cmp r0, r6			// if end of array, branch to end
+	cmp r10, r6			// if end of array, branch to end
 	beq pop_stack
 
 
 check_operator:
 	add r8, r8, #1
 	ldrb r1, [r5, r8]
-	cmp r1, r6
+	cmp r1, #0	
+//	cmp r1, r6
 	beq continue			// if at end of operator array, continue
 
 	ldrb r1, [r5, r8]
@@ -123,7 +130,7 @@ hit_operator:				// if they're equal, continue
 
 	ldrb r1, [r5, r8]
 	push {r1}			// push operator onto stack
-	add r10, r10, #1
+	add r10, r10, #4
 	ldr r2, address_precedence
 	ldrb r3, [r2, r8] 		// assign previous precedence to r3
 	mov r8, #0
@@ -142,14 +149,16 @@ continue:
 	ldr r1, address_input
 //	ldr r1, [r1]
 	ldrb r0, [r1, r10]
-	strb r0, [r4, r9]		// store operator in r9
+	strb r0, [r4, r9]		// store operand in r4
 	mov r7, r10
-	add r7, r7, #1
+	add r7, r7, #4
 	ldrb r0, [r1, r7]
 	cmp r0, #46
-	beq no_separator		// check for . separating expression
+	beq yes_separator		// check for . separating expression
 	cmp r0, #47
 	bgt no_separator
+
+	b continue2
 
 yes_separator:
 	add r9, r9, #1
@@ -164,7 +173,7 @@ no_separator:
 	b outer 			// start again to find new expression
 
 continue2:
-	add r10, r10, #1
+	add r10, r10, #4
 	mov r8, #0
 	b outer				// loop over the expression again
 
@@ -226,7 +235,7 @@ pop_stack:
 	
 postfix:
 	ldr r5, address_operators
-	mov r10, #7
+	mov r10, #8
 	ldrb r10, [r5, r10]
 	push {r10}		// push &
 	mov r10, #0
@@ -234,7 +243,7 @@ postfix:
 
 postfix_loop:
 	cmp r10, r9
-	beq exit		// r9 stores size of queue
+	beq end			// r9 stores size of queue (of operators)
 	
 	ldrb r1, [r4, r10]	// access element from queue
 	cmp r1, #110		// separator 'n'
@@ -271,8 +280,11 @@ clear_operation:
 	b postfix_loop
 
 operate:
+
+// TODO: get operands from r4, the queue
+
 	pop {r2}		// second operand
-	pop {r3}		// first operand
+//	pop {r3}		// first operand
 	mov r12, #1		// for exponents
 
 	cmp r1, #42		// if operation is *
@@ -341,12 +353,14 @@ exponentiate:
 
 
 exit:
-	pop {r0}		// returns value of operation
+	pop {r0}
 //	mov r2, r3
-//	ldr r0, address_output
-//	bl printf
+	ldr r0, address_output
+	bl printf
 	pop {r1}		// clear remaining &
 
+//	mov r0, #0		// REPLACE WITH RESULT
+//	adds sp, sp, #4
 	pop {r7, ip, pc}
 
 print_error_char:
@@ -361,10 +375,7 @@ print_error_length:
 	mov r0, #0
 	bl exit
 
-print_warning:
-	ldr r0, address_warning
-	bl printf
-	b setup	
+
 
 // transform expression into postfix notation: if find unfamiliar character, exit with error
 // evaluate postfix expression
@@ -382,7 +393,7 @@ address_separator:	.word separator
 address_temp:		.word temp
 address_space:		.word space
 address_output:		.word output
-address_warning:	.word argv_warning
+address_prompt:		.word prompt
 
 
 // C-style functions
