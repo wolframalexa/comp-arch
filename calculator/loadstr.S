@@ -157,6 +157,10 @@ continue:
 	ldrb r0, [r1, r10]
 
 	ldr r4, address_queue
+
+// use atof to make this a float
+	sub r0, r0, #48
+
 	strb r0, [r4, r9]		// store operand in r4
 	add r9, r9, #4			// potentially problematic
 
