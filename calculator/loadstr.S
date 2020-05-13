@@ -8,7 +8,7 @@
 scan_pattern: .asciz "%c"
 
 .balign 4
-prompt: .asciz "Please enter the calculation: \n"
+prompt: .asciz "Please enter the calculation: "
 
 .balign 4
 error_length: .asciz "ERROR: your operations are too long!\n"
@@ -74,12 +74,12 @@ load_str:
 	bl scanf
 
 	ldr r1, address_input
-	add r1, r1, r6
-	ldrb r1, [r1]
-	cmp r1, r5
+//	add r1, r1, r6
+	ldrb r1, [r1, r6]
+	cmp r1, r5			// if r1 is a new line
 	beq following
 
-	add r6, r6, #4
+	add r6, r6, #1
 	b load_str
 
 
@@ -87,8 +87,6 @@ following:
 	mov r10, #0			// iterator for input array
 	mov r9, #0			// queue pointer
 	mov r8, #0 			// operator pointer
-//	ldr r6, address_newline		// address of the newline character
-//	ldrb r6, [r6]
 
 	ldr r5, address_operators
 	mov r1, #8
@@ -106,8 +104,8 @@ following:
 
 outer:
 	ldr r1, address_input
-//	ldr r1, [r1]
 	ldrb r0, [r1, r10]		// load first element of input array
+// potential problem w iterator
 	cmp r10, r6			// if end of array, branch to end
 	beq pop_stack
 
@@ -134,7 +132,7 @@ hit_operator:				// if they're equal, continue
 
 	ldrb r1, [r5, r8]
 	push {r1}			// push operator onto stack
-	add r10, r10, #4
+	add r10, r10, #1
 	ldr r2, address_precedence
 	ldrb r3, [r2, r8] 		// assign previous precedence to r3
 	mov r8, #0
@@ -148,14 +146,14 @@ close_parenthesis:			// pop operators from stack when reaching closed parenthesi
 
 
 	strb r1, [r4, r9]		// store operator in r4
-	add r9, r9, #4
+	add r9, r9, #1
 	b close_parenthesis		// if you haven't hit the ( yet, continue popping
 
 continue:
 	ldr r1, address_input
 	ldr r0, [r1, r10]
 	ldr r4, address_queue
-	str r0, [r4, r9]
+ 	str r0, [r4, r9]
 
 /* use atof to make this a float
 //	sub r0, r0, #48
@@ -164,11 +162,8 @@ continue:
 	bl atof
 	vpush {d0}			// D0 IS CONSISTENTLY 0??
 */
-//	strb r0, [r4, r9]		// store operand in r4
-//	add r9, r9, #4			// potentially problematic
-
 	mov r7, r10
-	add r7, r7, #4
+	add r7, r7, #1
 	
 	ldr r1, address_input
 	ldr r0, [r1, r7]
@@ -178,19 +173,19 @@ continue:
 	bgt no_separator
 
 yes_separator:
-	add r9, r9, #4
+	add r9, r9, #1
 	ldr r2, address_separator
 	ldrb r2, [r2]
 	strb r2, [r4, r9]
 
 no_separator:
-	add r9, r9, #4
-	add r10, r10, #4
+	add r9, r9, #1
+	add r10, r10, #1
 	mov r8, #0
 	b outer 			// start again to find new expression
 
 continue2:
-	add r10, r10, #4
+	add r10, r10, #1
 	mov r8, #0
 	b outer				// loop over the expression again
 
@@ -216,7 +211,7 @@ continue4:
 next:
 	ldrb r2, [r5, r8]
 	push {r2}
-	add r10, r10, #4
+	add r10, r10, #1
 	ldr r2, address_precedence
 	ldrb r3, [r2, r8]
 	mov r8, #0
@@ -224,7 +219,7 @@ next:
 
 next1:
 	strb r1, [r4, r9]
-	add r9, r9, #4
+	add r9, r9, #1
 	b cmp_current_stack
 
 next2:
@@ -233,7 +228,7 @@ next2:
 	push {r1}
 	ldrb r2, [r5, r8]
 	push {r2}		// push current element onto stack
-	add r10, r10, #4
+	add r10, r10, #1
 	ldr r2, address_precedence
 	ldrb r3, [r2, r8]
 	mov r8, #0
@@ -246,7 +241,7 @@ pop_stack:
 
 //	ldr r4, address_temp
 	strb r1, [r4, r9]	// THIS IS THE ISSUE - was overwriting operands
-	add r9, r9, #4
+	add r9, r9, #1
 	b pop_stack		// continue popping from stack until we reach &
 
 	
@@ -259,11 +254,9 @@ postfix:
 	mov r7, #0
 
 postfix_loop:
-//	sub r11, r10, #4
-	cmp r10, r9		// r10 lags r9 by 4
-	beq end_program		// r9 stores size of queue (of operators)
+	cmp r10, r9
+	beq end_program		// r9 stores size of postfix queue
 	
-//	ldr r4, address_temp
 	ldrb r1, [r4, r10]	// access operator
 	cmp r1, #110		// separator 'n'
 	beq push_float
@@ -280,16 +273,18 @@ postfix_loop:
 next3:				// sent here if we hit a .
 	ldr r2, address_temp
 	strb r1, [r2, r7]
-	add r7, r7, #1
-	add r10, r10, #4
+	add r7, r7, #1		// character = 1 byte
+	add r10, r10, #1
 	b postfix_loop
 
 push_float:
 	ldr r0, address_temp
-	bl atof			// turn string into float
+//	ldr r1, [r0, r7]		// need endptr
+//	add r0, r0, r7
+	bl atof				// turn string into float
 	vpush {d0}
 	mov r7, #0
-	add r10, r10, #4
+	add r10, r10, #1
 
 clear_operation:
 	ldr r0, address_temp
@@ -299,22 +294,11 @@ clear_operation:
 	add r7, r7, #1
 	cmp r7, #50
 	blt clear_operation
+
 	b postfix_loop
 
 operate:
 
-/*	ldr r4, address_queue
-	ldr r2, [r4, r10]
-	vmov s2, r2
-//	vcvt.f32.u32 d2, r2	// potentially problematic
-//	vpush {d2}
-
-	add r10, r10, #4
-	ldr r3, [r4, r10]
-	vmov s3, r3
-//	vcvt.f32.u32 d3, r3
-//	push {r3}
-*/
 	vpop {d3}
 	vpop {d2}		// potentially problematic
 
@@ -338,33 +322,33 @@ operate:
 	b print_error_char
 
 multiply:
-	vmul.f32 s2, s3, s2
-	vpush {s2}
-	add r10, r10, #4
+	vmul.f64 d2, d3, d2
+	vpush {d2}
+	add r10, r10, #1
 	b postfix_loop
 
 subtract:
-	vsub.f32 s2, s3, s2
-	vpush {s2}
-	add r10, r10, #4
+	vsub.f64 d2, d3, d2
+	vpush {d2}
+	add r10, r10, #1
 	b postfix_loop
 
 add:
-	vadd.f32 s2, s3, s2
-	vpush {s2}
-	add r10, r10, #4
+	vadd.f64 d2, d3, d2
+	vpush {d2}
+	add r10, r10, #1
 	b postfix_loop
 
 divide:
-	vdiv.f32 s2, s3, s2
-	vpush {s2}
-	add r10, r10, #4
+	vdiv.f64 d2, d3, d2
+	vpush {d2}
+	add r10, r10, #1
 	b postfix_loop
 
 exponentiate:
 //	vmov d12, r2
 //	vmov d3, r3
-	vmul.f32 s12, s3, s12	// an exponent is multiplying something by itself
+	vmul.f64 d12, d3, d12	// an exponent is multiplying something by itself
 	sub r2, r2, #1
 	cmp r2, #0
 	blt print_error_char
@@ -373,21 +357,21 @@ exponentiate:
 	bne exponentiate
 
 //	vmov r12, d12
-	vpush {s12}
-	add r10, r10, #4	
+	vpush {d12}
+	add r10, r10, #1
 	b postfix_loop	
 
 
 
 end_program: 			// problem in end_program
-	vpop {s0}
-	vmov r2, s0
+	vpop {d0}
+	vmov r2, r3, d0
 
-	ldr r6, address_result
-	str r3, [r6]		// potentially problematic
+//	ldr r6, address_result
+//	str r3, [r6]		// potentially problematic
 
 	ldr r0, address_output
-	ldr r1, address_result
+//	ldr r1, address_result
 	bl printf		// this always prints 0.000
 	pop {r1}		// clear remaining &
 
