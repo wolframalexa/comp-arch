@@ -294,19 +294,16 @@ clear_operation:
 
 operate:
 
-// TODO: get operands from r4, the queue
-
-//	pop {r2}		// second operand
-//	pop {r3}		// first operand
-//	pop {r1}		// potentially problematic
-
-//	ldr r4, address_temp
-//	ldr r1, [r4, #4]	// NEED A BETTER WAY OF GETTING THE OPERATOR - WHY DID R1 NOT WORK ANYMORE
-
-	ldr r4, address_queue
+/*	ldr r4, address_queue
 	ldr r2, [r4, r10]
+	push {r2}
+*/
 	add r10, r10, #4
-	ldr r3, [r4, r10]
+/*	ldr r3, [r4, r10]
+	push {r3}
+*/
+	vpop {d3}
+	vpop {d2}		// potentially problematic
 
 	mov r12, #1		// for exponents
 
@@ -328,32 +325,26 @@ operate:
 	b print_error_char
 
 multiply:
-//	vmov d2, r2
-//	vmov d3, r3
 	vmul.f64 d2, d3, d2
-//	vmov r2, d2
-	push {r2}
+	vpush {d2}
 	add r10, r10, #4
 	b postfix_loop
 
 subtract:
 	vsub.f64 d2, d3, d2
-//	vmov r2, d2
-	push {r2}
+	vpush {d2}
 	add r10, r10, #4
 	b postfix_loop
 
 add:
 	vadd.f64 d2, d3, d2
-//	vmov r2, d2
-	push {r2}
+	vpush {d2}
 	add r10, r10, #4
 	b postfix_loop
 
 divide:
 	vdiv.f64 d2, d3, d2
-//	vmov r2, d2
-	push {r2}
+	vpush {d2}
 	add r10, r10, #4
 	b postfix_loop
 
@@ -369,30 +360,24 @@ exponentiate:
 	bne exponentiate
 
 //	vmov r12, d12
-	push {r12}
+	vpush {d12}
 	add r10, r10, #4	
 	b postfix_loop	
 
 
 
 end_program:
-	pop {r7}
-//	mov r2, r3, d0
-//	ldr r0, address_output
-//	bl printf
-
+	vpop {d0}
+	vmov r2, r3, d0
 
 	ldr r6, address_result
-	str r7, [r6, #0]
+	str r3, [r6]		// potentially problematic
 
-//	mov r2, r3
 	ldr r0, address_output
 	ldr r1, address_result
-	bl printf
+	bl printf		// this always prints 0.000
 	pop {r1}		// clear remaining &
 
-//	mov r0, #0		// REPLACE WITH RESULT
-//	adds sp, sp, #4
 	pop {r7, ip, pc}
 
 print_error_char:
