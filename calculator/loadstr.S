@@ -97,6 +97,7 @@ following:
 
 	ldr r4, address_queue
 	ldr r2, address_precedence
+
 	mov r1, #8
 	ldrb r3, [r2, r1]		// r3 will be used to check for current element
 					// potential issue
@@ -115,7 +116,6 @@ check_operator:
 	add r8, r8, #1
 	ldrb r1, [r5, r8]
 	cmp r1, #0	
-//	cmp r1, r6
 	beq continue			// if at end of operator array, continue
 
 	ldrb r1, [r5, r8]
@@ -152,32 +152,30 @@ close_parenthesis:			// pop operators from stack when reaching closed parenthesi
 	b close_parenthesis		// if you haven't hit the ( yet, continue popping
 
 continue:
-//	ldr r1, address_input
-//	ldrb r0, [r1, r10]
-
+	ldr r1, address_input
+	ldr r0, [r1, r10]
 	ldr r4, address_queue
+	str r0, [r4, r9]
 
-// use atof to make this a float
+/* use atof to make this a float
 //	sub r0, r0, #48
 	ldr r0, address_input
 	add r0, r0, r10
 	bl atof
 	vpush {d0}			// D0 IS CONSISTENTLY 0??
-
+*/
 //	strb r0, [r4, r9]		// store operand in r4
-	add r9, r9, #4			// potentially problematic
+//	add r9, r9, #4			// potentially problematic
 
 	mov r7, r10
 	add r7, r7, #4
 	
 	ldr r1, address_input
-	ldrb r0, [r1, r7]
+	ldr r0, [r1, r7]
 	cmp r0, #46
-	beq yes_separator		// check for . separating expression
+	beq no_separator		// check for . separating expression
 	cmp r0, #47
 	bgt no_separator
-
-	b continue2
 
 yes_separator:
 	add r9, r9, #4
@@ -230,7 +228,7 @@ next1:
 	b cmp_current_stack
 
 next2:
-	mov r1, #7
+	mov r1, #8
 	ldrb r1, [r5, r1]	// push the & element onto stack
 	push {r1}
 	ldrb r2, [r5, r8]
@@ -246,9 +244,9 @@ pop_stack:
 	cmp r1, #38		// compare to &
 	beq postfix
 
-	ldr r4, address_temp
-	strb r1, [r4, r8]	// THIS IS THE ISSUE - was overwriting operands
-	add r8, r8, #1
+//	ldr r4, address_temp
+	strb r1, [r4, r9]	// THIS IS THE ISSUE - was overwriting operands
+	add r9, r9, #4
 	b pop_stack		// continue popping from stack until we reach &
 
 	
@@ -261,10 +259,11 @@ postfix:
 	mov r7, #0
 
 postfix_loop:
-	cmp r10, r9
+	sub r11, r10, #4
+	cmp r11, r9		// r10 lags r9 by 4
 	beq end_program		// r9 stores size of queue (of operators)
 	
-	ldr r4, address_temp
+//	ldr r4, address_temp
 	ldrb r1, [r4, r10]	// access operator
 	cmp r1, #110		// separator 'n'
 	beq push_float
@@ -272,10 +271,11 @@ postfix_loop:
 	cmp r1, #46		// compare to '.'	
 	beq next3
 
-	cmp r1, #47		// compare to / operator: highest ascii operator
+	cmp r1, #47		// compare to / operator: highest ascii operator except ^
 	ble operate
 
-	// need comparison for exponent operator
+	cmp r1, #94
+	beq operate
 
 next3:				// sent here if we hit a .
 	ldr r2, address_temp
@@ -303,16 +303,20 @@ clear_operation:
 
 operate:
 
-/*	ldr r4, address_queue
+	ldr r4, address_queue
 	ldr r2, [r4, r10]
-	push {r2}
-*/
+	vmov s2, r2
+//	vcvt.f32.u32 d2, r2	// potentially problematic
+//	vpush {d2}
+
 	add r10, r10, #4
-/*	ldr r3, [r4, r10]
-	push {r3}
-*/
-	vpop {d3}
-	vpop {d2}		// potentially problematic
+	ldr r3, [r4, r10]
+	vmov s3, r3
+//	vcvt.f32.u32 d3, r3
+//	push {r3}
+
+//	vpop {d3}
+//	vpop {d2}		// potentially problematic
 
 	mov r12, #1		// for exponents
 
@@ -334,33 +338,33 @@ operate:
 	b print_error_char
 
 multiply:
-	vmul.f64 d2, d3, d2
-	vpush {d2}
+	vmul.f32 s2, s3, s2
+	vpush {s2}
 	add r10, r10, #4
 	b postfix_loop
 
 subtract:
-	vsub.f64 d2, d3, d2
-	vpush {d2}
+	vsub.f32 s2, s3, s2
+	vpush {s2}
 	add r10, r10, #4
 	b postfix_loop
 
 add:
-	vadd.f64 d2, d3, d2
-	vpush {d2}
+	vadd.f32 s2, s3, s2
+	vpush {s2}
 	add r10, r10, #4
 	b postfix_loop
 
 divide:
-	vdiv.f64 d2, d3, d2
-	vpush {d2}
+	vdiv.f32 s2, s3, s2
+	vpush {s2}
 	add r10, r10, #4
 	b postfix_loop
 
 exponentiate:
 //	vmov d12, r2
 //	vmov d3, r3
-	vmul.f64 d12, d3, d12	// an exponent is multiplying something by itself
+	vmul.f32 s12, s3, s12	// an exponent is multiplying something by itself
 	sub r2, r2, #1
 	cmp r2, #0
 	blt print_error_char
@@ -369,15 +373,15 @@ exponentiate:
 	bne exponentiate
 
 //	vmov r12, d12
-	vpush {d12}
+	vpush {s12}
 	add r10, r10, #4	
 	b postfix_loop	
 
 
 
-end_program:
-	vpop {d0}
-	vmov r2, r3, d0
+end_program: 			// problem in end_program
+	vpop {s0}
+	vmov r2, s0
 
 	ldr r6, address_result
 	str r3, [r6]		// potentially problematic
