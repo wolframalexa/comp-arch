@@ -152,20 +152,25 @@ close_parenthesis:			// pop operators from stack when reaching closed parenthesi
 	b close_parenthesis		// if you haven't hit the ( yet, continue popping
 
 continue:
-	ldr r1, address_input
-//	ldr r1, [r1]
-	ldrb r0, [r1, r10]
+//	ldr r1, address_input
+//	ldrb r0, [r1, r10]
 
 	ldr r4, address_queue
 
 // use atof to make this a float
-	sub r0, r0, #48
+//	sub r0, r0, #48
+	ldr r0, address_input
+	add r0, r0, r10
+	bl atof
+	vpush {d0}			// D0 IS CONSISTENTLY 0??
 
-	strb r0, [r4, r9]		// store operand in r4
+//	strb r0, [r4, r9]		// store operand in r4
 	add r9, r9, #4			// potentially problematic
 
 	mov r7, r10
 	add r7, r7, #4
+	
+	ldr r1, address_input
 	ldrb r0, [r1, r7]
 	cmp r0, #46
 	beq yes_separator		// check for . separating expression
@@ -282,7 +287,7 @@ next3:				// sent here if we hit a .
 push_float:
 	ldr r0, address_temp
 	bl atof			// turn string into float
-	push {r0}
+	vpush {d0}
 	mov r7, #0
 	add r10, r10, #4
 
@@ -358,7 +363,7 @@ exponentiate:
 	vmul.f64 d12, d3, d12	// an exponent is multiplying something by itself
 	sub r2, r2, #1
 	cmp r2, #0
-	blt error_char
+	blt print_error_char
 
 	cmp r2, #0
 	bne exponentiate
@@ -417,3 +422,4 @@ address_result:		.word result
 .global printf
 .global scanf
 .global atof
+.global strtod
