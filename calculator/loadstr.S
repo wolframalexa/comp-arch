@@ -259,8 +259,8 @@ postfix:
 	mov r7, #0
 
 postfix_loop:
-	sub r11, r10, #4
-	cmp r11, r9		// r10 lags r9 by 4
+//	sub r11, r10, #4
+	cmp r10, r9		// r10 lags r9 by 4
 	beq end_program		// r9 stores size of queue (of operators)
 	
 //	ldr r4, address_temp
@@ -303,7 +303,7 @@ clear_operation:
 
 operate:
 
-	ldr r4, address_queue
+/*	ldr r4, address_queue
 	ldr r2, [r4, r10]
 	vmov s2, r2
 //	vcvt.f32.u32 d2, r2	// potentially problematic
@@ -314,9 +314,9 @@ operate:
 	vmov s3, r3
 //	vcvt.f32.u32 d3, r3
 //	push {r3}
-
-//	vpop {d3}
-//	vpop {d2}		// potentially problematic
+*/
+	vpop {d3}
+	vpop {d2}		// potentially problematic
 
 	mov r12, #1		// for exponents
 
