@@ -125,17 +125,17 @@ hit_operator:				// if they're equal, continue
 	ldrb r2, [r2, r8]
 //	cmp r2, #51
 //	beq open_parenthesis
-	cmp r2, #52
-	beq close_parenthesis
-	cmp r2, r3
+	cmp r2, #52 
+	beq close_parenthesis 
+	cmp r2, r3 
 	bgt cmp_current_stack
 
-	ldrb r1, [r5, r8]
-	push {r1}			// push operator onto stack
-	add r10, r10, #1
-	ldr r2, address_precedence
-	ldrb r3, [r2, r8] 		// assign previous precedence to r3
-	mov r8, #0
+	ldrb r1, [r5, r8] 	
+	push {r1} 			// push operator onto stack 
+	add r10, r10, #1 
+	ldr r2, address_precedence 
+	ldrb r3, [r2, r8] 		// assign previous precedence to r3 
+	mov r8, #0 
 	b outer
 
 
@@ -151,9 +151,9 @@ close_parenthesis:			// pop operators from stack when reaching closed parenthesi
 
 continue:
 	ldr r1, address_input
-	ldr r0, [r1, r10]
+	ldrb r0, [r1, r10]
 	ldr r4, address_queue
- 	str r0, [r4, r9]
+ 	strb r0, [r4, r9]
 
 /* use atof to make this a float
 //	sub r0, r0, #48
@@ -166,7 +166,7 @@ continue:
 	add r7, r7, #1
 	
 	ldr r1, address_input
-	ldr r0, [r1, r7]
+	ldrb r0, [r1, r7]
 	cmp r0, #46
 	beq no_separator		// check for . separating expression
 	cmp r0, #47
@@ -270,7 +270,7 @@ postfix_loop:
 	cmp r1, #94
 	beq operate
 
-next3:				// sent here if we hit a .
+next3:				
 	ldr r2, address_temp
 	strb r1, [r2, r7]
 	add r7, r7, #1		// character = 1 byte
@@ -279,8 +279,7 @@ next3:				// sent here if we hit a .
 
 push_float:
 	ldr r0, address_temp
-//	ldr r1, [r0, r7]		// need endptr
-//	add r0, r0, r7
+	ldr r0, [r0]			// load the entire array; potentially problematic
 	bl atof				// turn string into float
 	vpush {d0}
 	mov r7, #0
@@ -410,4 +409,4 @@ address_result:		.word result
 .global printf
 .global scanf
 .global atof
-.global strtod
+
