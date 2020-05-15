@@ -263,7 +263,7 @@ next3:
 push_float:
         ldr r0, addr_of_temp
         bl atof
-        push {r0}
+        vpush {d0}
         mov r7, #0
         add r10, r10, #1
 
@@ -278,11 +278,11 @@ clear_loop:
         b execute_rpn
 
 execute_operation:
-        pop {r2}                       //denominator
+        vpop {d2}                       //denominator
         //vmov r2, r3, d2
 	//ldr r0, addr_of_output_string
         //bl printf
-        pop {d3}                       //numerator
+        vpop {d3}                       //numerator
         //vmov r2, r3, d3
         //ldr r0, addr_of_output_string
         //bl printf
@@ -294,20 +294,20 @@ execute_operation:
         beq add
 
 subtract:
-        vsub.f64 r2, r3, r2
-        push {d2}
+        vsub.f64 d2, d3, d2
+        vpush {d2}
         add r10, r10, #1
         b execute_rpn
 
 multiply:
         vmul.f64 d2, d3, d2
-        push {d2}
+        vpush {d2}
         add r10, r10, #1
 	b execute_rpn
 
 divide:
         vdiv.f64 d2, d3, d2
-        push {d2}
+        vpush {d2}
         add r10, r10, #1
         b execute_rpn
 /*
@@ -345,8 +345,8 @@ print_out_array:
         cmp r10, r5
         blt print_out_array
 */
-        pop {r0}
-        mov r2, r3, d0
+        vpop {d0}
+        vmov r2, r3, d0
         ldr r0, addr_of_output_string
         bl printf
 	pop {r1}                                //clear out the remaining & in the stack
