@@ -385,7 +385,7 @@ address_prompt:		.word prompt
 address_result:		.word result
 
 // C-style functions
-.extern printf
-.extern scanf
-.extern atof
+.global printf
+.global scanf
+.global atof
 
