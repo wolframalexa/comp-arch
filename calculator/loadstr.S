@@ -279,7 +279,6 @@ next3:
 
 push_float:
 	ldr r0, address_temp
-	ldr r0, [r0]			// load the entire array; potentially problematic
 	bl atof				// turn string into float
 	vpush {d0}
 	mov r7, #0
