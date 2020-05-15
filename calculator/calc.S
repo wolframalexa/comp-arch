@@ -1,6 +1,6 @@
 /* Alexa Jakob Program 3 ECE251, Spring 2020 */
 
-/* This program takes an argument of max 4 operations and 4 operands on the command line, and performs the operations. All numbers must be 32-bit ints or floats. Allowed operations: +-*^/() */
+/* This program prompts the user for a calculation of max 4 operations and 4 operands on the command line, and performs the operations. All numbers must be 32-bit ints or floats. Allowed operations: +-*^/() */
 
 .data
 
@@ -26,7 +26,7 @@ temp: .skip 50
 queue: .skip 50
 
 .balign 4
-precedence: .asciz "011223445" 		// likely issue with how we assign precedence
+precedence: .asciz "011223456"
 
 .balign 4
 separator: .asciz "n"
@@ -74,9 +74,8 @@ load_str:
 	bl scanf
 
 	ldr r1, address_input
-//	add r1, r1, r6
 	ldrb r1, [r1, r6]
-	cmp r1, r5			// if r1 is a new line
+	cmp r1, r5			// if r1 is a new line, continue
 	beq following
 
 	add r6, r6, #1
@@ -105,7 +104,6 @@ following:
 outer:
 	ldr r1, address_input
 	ldrb r0, [r1, r10]		// load first element of input array
-// potential problem w iterator
 	cmp r10, r6			// if end of array, branch to end
 	beq pop_stack
 
@@ -120,11 +118,9 @@ check_operator:
 	cmp r0, r1
 	bne check_operator		// if element of input array not equal to the operator, go back (and check until it is)
 
-hit_operator:				// if they're equal, continue
+hit_operator:				// if they're equal, we have an operator
 	ldr r2, address_precedence
 	ldrb r2, [r2, r8]
-//	cmp r2, #51
-//	beq open_parenthesis
 	cmp r2, #52 
 	beq close_parenthesis 
 	cmp r2, r3 
@@ -141,7 +137,7 @@ hit_operator:				// if they're equal, continue
 
 close_parenthesis:			// pop operators from stack when reaching closed parenthesis, complying with rules of postfix notation
 	pop {r1}
-	cmp r1, #40			// is r1 (
+	cmp r1, #51			// is r1 (
 	beq continue2			// if yes, continue
 
 
@@ -155,13 +151,6 @@ continue:
 	ldr r4, address_queue
  	strb r0, [r4, r9]
 
-/* use atof to make this a float
-//	sub r0, r0, #48
-	ldr r0, address_input
-	add r0, r0, r10
-	bl atof
-	vpush {d0}			// D0 IS CONSISTENTLY 0??
-*/
 	mov r7, r10
 	add r7, r7, #1
 	
@@ -172,7 +161,7 @@ continue:
 	cmp r0, #47
 	bgt no_separator
 
-yes_separator:
+yes_separator:				// if we have the end of a number, add separator in between
 	add r9, r9, #1
 	ldr r2, address_separator
 	ldrb r2, [r2]
@@ -182,7 +171,7 @@ no_separator:
 	add r9, r9, #1
 	add r10, r10, #1
 	mov r8, #0
-	b outer 			// start again to find new expression
+	b outer 			
 
 continue2:
 	add r10, r10, #1
@@ -205,7 +194,7 @@ continue4:
 	cmp r0, #38			// checks for & on stack
 	beq next2
 
-	cmp r0, r2			// what is r2?
+	cmp r0, r2			// if r0 is less than the separator, continue
 	ble next1
 
 next:
@@ -226,6 +215,7 @@ next2:
 	mov r1, #8
 	ldrb r1, [r5, r1]	// push the & element onto stack
 	push {r1}
+
 	ldrb r2, [r5, r8]
 	push {r2}		// push current element onto stack
 	add r10, r10, #1
@@ -239,8 +229,7 @@ pop_stack:
 	cmp r1, #38		// compare to &
 	beq postfix
 
-//	ldr r4, address_temp
-	strb r1, [r4, r9]	// THIS IS THE ISSUE - was overwriting operands
+	strb r1, [r4, r9]	// store operator in the queue (postfix)
 	add r9, r9, #1
 	b pop_stack		// continue popping from stack until we reach &
 
@@ -249,15 +238,15 @@ postfix:
 	ldr r5, address_operators
 	mov r10, #8
 	ldrb r10, [r5, r10]
-	push {r10}		// push &
+	push {r10}		// repush & so we know when we've reached the end of the stack
 	mov r10, #0
 	mov r7, #0
 
 postfix_loop:
 	cmp r10, r9
-	beq end_program		// r9 stores size of postfix queue
+	beq end_program		// r9 stores size of postfix queue, if we've evaluated the expression it's over
 	
-	ldrb r1, [r4, r10]	// access operator
+	ldrb r1, [r4, r10]	// access operations in postfix queue
 	cmp r1, #110		// separator 'n'
 	beq push_float
 
@@ -267,7 +256,7 @@ postfix_loop:
 	cmp r1, #47		// compare to / operator: highest ascii operator except ^
 	ble operate
 
-	cmp r1, #94
+	cmp r1, #94		// compare to ^ operator
 	beq operate
 
 next3:				
@@ -279,14 +268,14 @@ next3:
 
 push_float:
 	ldr r0, address_temp
-	bl atof				// turn string into float
+	bl atof			// turn string into float. this is a known issue, as d0 is consistently 0
 	vpush {d0}
 	mov r7, #0
 	add r10, r10, #1
 
 clear_operation:
 	ldr r0, address_temp
-	ldr r2, =space
+	ldr r2, address_space
 	ldrb r2, [r2]
 	strb r2, [r0, r7]	// clear the temporary array
 	add r7, r7, #1
@@ -296,9 +285,8 @@ clear_operation:
 	b postfix_loop
 
 operate:
-
 	vpop {d3}
-	vpop {d2}		// potentially problematic
+	vpop {d2}
 
 	mov r12, #1		// for exponents
 
@@ -344,36 +332,28 @@ divide:
 	b postfix_loop
 
 exponentiate:
-//	vmov d12, r2
-//	vmov d3, r3
 	vmul.f64 d12, d3, d12	// an exponent is multiplying something by itself
 	sub r2, r2, #1
-	cmp r2, #0
-	blt print_error_char
-
-	cmp r2, #0
+	cmp r2, #0		// if r2 not 0, still more multiplys to go
 	bne exponentiate
 
-//	vmov r12, d12
 	vpush {d12}
 	add r10, r10, #1
 	b postfix_loop	
 
-
-
-end_program: 			// problem in end_program
+end_program:
 	vpop {d0}
 	vmov r2, r3, d0
 
-//	ldr r6, address_result
-//	str r3, [r6]		// potentially problematic
+	ldr r6, address_result
+	str r3, [r6]
 
 	ldr r0, address_output
-//	ldr r1, address_result
-	bl printf		// this always prints 0.000
+	ldr r1, address_result
+	bl printf		// this always prints 0.000, because d0 is always 0 (in atof)
 	pop {r1}		// clear remaining &
 
-	pop {r7, ip, pc}
+	pop {r7, ip, pc}	// exit program
 
 print_error_char:
 	ldr r0, address_error_char
@@ -405,7 +385,7 @@ address_prompt:		.word prompt
 address_result:		.word result
 
 // C-style functions
-.global printf
-.global scanf
-.global atof
+.extern printf
+.extern scanf
+.extern atof
 

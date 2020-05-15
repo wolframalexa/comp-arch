@@ -1,6 +1,6 @@
 all: calc.out
 
 calc.out: calc.S
-	arm-linux-gnueabi-gcc -mfpu=vfp $< -o $@ -static -ggdb3
+	arm-linux-gnueabi-gcc -mfpu=vfp $< -o $@ -static
 clean:
 	rm calc.out
